@@ -1,6 +1,17 @@
 # 🗻fuji contracts
 
-- [Safe for Fuji Unlimited](contracts/unlimited-safe.tapscript)
-- [Safe for Fuji Prime Safe](contracts/prime-safe.tapscript)
-- [Mint Contract](contracts/mint.tapscript) 
-- [Liquidator Pool(contracts/pool)
+## Alpha v0
+
+- [Safe Prime](alpha/prime-safe.tapscript)
+
+
+## Beta v1
+- [Safe Unlimited](beta/unlimited-safe.tapscript)
+- [Safe Prime](beta/prime-safe.tapscript)
+- [Lock](beta/lock.tapscript)
+- [Mint](beta/mint.tapscript) 
+- [Treasury](beta/mint.tapsctipt)
+- Liquidator Pool
+  - [Pool Commitment](beta/liquidator/commitment.tapscript)
+  - [Pool](beta/liquidator/pool.tapscript)
+- [Fuji Savings](beta/saving.tapscript)
