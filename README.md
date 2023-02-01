@@ -12,6 +12,7 @@
 - [Mint](beta/mint.tapscript) 
 - [Treasury](beta/mint.tapsctipt)
 - Liquidator Pool
-  - [Pool Commitment](beta/liquidator/commitment.tapscript)
-  - [Pool](beta/liquidator/pool.tapscript)
-- [Fuji Savings](beta/saving.tapscript)
+  - [Deposit](beta/liquidator/deposit.tapscript)
+  - [Witdraw](beta/liquidator/witdraw.tapscript)
+  - [Liquidate](beta/liquidator/liquidate.tapscript
+- [Savings](beta/saving.tapscript)
