@@ -14,5 +14,5 @@
 - Liquidator Pool
   - [Deposit](beta/liquidator/deposit.tapscript)
   - [Witdraw](beta/liquidator/witdraw.tapscript)
-  - [Liquidate](beta/liquidator/liquidate.tapscript
+  - [Liquidate](beta/liquidator/liquidate.tapscript)
 - [Savings](beta/saving.tapscript)
