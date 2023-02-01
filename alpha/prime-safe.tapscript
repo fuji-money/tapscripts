@@ -1,5 +1,5 @@
 // Name: Fuji Prime Safe
 
-// 1. Claim: Anyone can Redeem After Expiration
+// 1. Claim: Treasury can Redeem After Expiration
 // 2. Private Redemption: Only Owner can Redeem All with Key
 // 3. Liquidation: Treasury can Redeem All with Attestation Price below the liquidation target price.
