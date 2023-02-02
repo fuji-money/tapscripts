@@ -10,7 +10,7 @@
 - [Safe Prime](beta/prime-safe.tapscript)
 - [Lock](beta/lock.tapscript)
 - [Mint](beta/mint.tapscript) 
-- [Treasury](beta/treasury.tapsctipt)
+- [Treasury](beta/treasury.tapscript)
 - Liquidator Pool
   - [Deposit](beta/liquidator/deposit.tapscript)
   - [Witdraw](beta/liquidator/witdraw.tapscript)
