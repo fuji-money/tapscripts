@@ -1,0 +1,76 @@
+//Liquidation: Treasury can Unlock all collateral
+// with Attestation Price below the liquidation target price when Burning Fuji
+//
+// constructorInputs:
+//      priceLevel: bytes
+//      setupTimestamp: bytes
+//      oraclePk: xonlypubkey
+//      borrowAsset: asset
+//      borrowAmount: value
+//      issuerPk: value
+//      assetPair: bytes
+//
+// functionInputs:
+//      currentPrice: bytes
+//      timestamp: bytes
+//      oracleSig: datasig
+//      issuerSig: sig
+
+// save $currentPrice
+OP_DUP
+// check $currentPrice < priceLevel
+<$priceLevel>
+OP_LESSTHAN64
+OP_VERIFY
+// copy timestamp from the witness
+OP_OVER
+// make sure the timestamp is after the contract setup timestamp
+<$setupTimestamp>
+OP_GREATERTHANOREQUAL64
+OP_VERIFY
+// concatenate $currentPrice to the end of $timestamp
+OP_CAT
+// concatenate $assetPair to the end of $timestamp.$currentPrice
+<$assetPair>
+OP_CAT
+// check that SHA2($timestamp.$currentPrice.$assetPair) was signed by the oracle
+OP_SHA256
+<$oraclePk>
+OP_CHECKSIGFROMSTACKVERIFY
+// get out 0 asset
+<0>
+OP_INSPECTOUTPUTASSET
+// check that out 0 asset is explicit
+<1>
+OP_EQUALVERIFY
+// check that out 0 asset is equal to $borrowAsset
+<$borrowAsset>
+OP_EQUALVERIFY
+// get out 0 value
+<0>
+OP_INSPECTOUTPUTVALUE
+// check that out 0 value is explicit
+<1>
+OP_EQUALVERIFY
+// check that out 0 value is equal to $borrowAmount
+<$borrowAmount>
+OP_EQUALVERIFY
+// take out 0 scriptpubkey
+<0>
+OP_INSPECTOUTPUTSCRIPTPUBKEY
+// OP_RETURN is not a witness scriptPubKey, so its version will be -1
+// check that the version is -1
+<-1>
+OP_EQUALVERIFY
+// check that the out 0 scriptpubkey is really just OP_RETURN
+<0x6a>
+OP_SHA256
+OP_EQUALVERIFY
+// Check that the nonce on out 0 is empty
+<0>
+OP_INSPECTOUTPUTNONCE
+<0>
+OP_EQUALVERIFY
+// Require Issuer authorization
+<$issuerPk>
+OP_CHECKSIG
