@@ -2,8 +2,8 @@
 // with Attestation Price below the liquidation target price when Burning Fuji
 //
 // constructorInputs:
-//      priceLevel: bytes
-//      setupTimestamp: bytes
+//      priceLevel: uint64
+//      setupTimestamp: uint64
 //      oraclePk: xonlypubkey
 //      borrowAsset: asset
 //      borrowAmount: value
@@ -11,8 +11,8 @@
 //      assetPair: bytes
 //
 // functionInputs:
-//      currentPrice: bytes
-//      timestamp: bytes
+//      currentPrice: uint64
+//      timestamp: uint64
 //      oracleSig: datasig
 //      issuerSig: sig
 
@@ -22,9 +22,9 @@ OP_DUP
 <$priceLevel>
 OP_LESSTHAN64
 OP_VERIFY
-// copy timestamp from the witness
+// copy $timestamp from the witness
 OP_OVER
-// make sure the timestamp is after the contract setup timestamp
+// make sure the $timestamp is after the contract setup time
 <$setupTimestamp>
 OP_GREATERTHANOREQUAL64
 OP_VERIFY
