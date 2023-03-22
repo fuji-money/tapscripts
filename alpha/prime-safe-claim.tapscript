@@ -1,0 +1,50 @@
+// Claim: Treasury can Unlock all collateral After expiration when Burning Fuji
+
+// constructorInputs:
+//      borrowAsset: asset
+//      borrowAmount: value
+//      issuerPk: xonlypubkey
+//      expirationTimeout: number
+
+// Check that $expirationTimeout has passed since the the start of the contract
+// Note that OP_CHECKSEQUENCEVERIFY will check $expirationTimeout against
+// medianTimePast, not the current timestamp
+<expirationTimeout>
+OP_CHECKSEQUENCEVERIFY
+// take out 0 asset
+<0>
+OP_INSPECTOUTPUTASSET
+// make sure that asset is not confidential
+<1>
+OP_EQUALVERIFY
+// check that the asset is equal to $borrowAsset
+<$borrowAsset>
+OP_EQUALVERIFY
+// take out 0 value
+<0>
+OP_INSPECTOUTPUTVALUE
+// make sure that value is not confidential
+<1>
+OP_EQUALVERIFY
+// check that the value is equal to $borrowAmount
+<$borrowAmount>
+OP_EQUALVERIFY
+// take out 0 scriptpubkey
+<0>
+OP_INSPECTOUTPUTSCRIPTPUBKEY
+// OP_RETURN is not a witness scriptPubKey, so its version will be -1
+// check that the version is -1
+<-1>
+OP_EQUALVERIFY
+// check that the out 0 scriptpubkey is really just OP_RETURN
+<0x6a> // DATA(OP_RETURN)
+OP_SHA256
+OP_EQUALVERIFY
+// Check that the nonce on out 0 is empty
+<0>
+OP_INSPECTOUTPUTNONCE
+<0>
+OP_EQUALVERIFY
+// Require Treasury authorization
+<$issuerPk>
+OP_CHECKSIG
