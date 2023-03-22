@@ -3,7 +3,7 @@
 // constructorInputs:
 //      borrowAsset: asset
 //      borrowAmount: value
-//      issuerPk: xonlypubkey
+//      treasuryPk: xonlypubkey
 //      expirationTimeout: number
 
 // Check that $expirationTimeout has passed since the the start of the contract
@@ -45,6 +45,6 @@ OP_EQUALVERIFY
 OP_INSPECTOUTPUTNONCE
 <0>
 OP_EQUALVERIFY
-// Require Treasury authorization
-<$issuerPk>
+// Require authorization by Treasury
+<$treasuryPk>
 OP_CHECKSIG

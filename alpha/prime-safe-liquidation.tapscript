@@ -7,14 +7,14 @@
 //      oraclePk: xonlypubkey
 //      borrowAsset: asset
 //      borrowAmount: value
-//      issuerPk: value
+//      treasuryPk: value
 //      assetPair: bytes
 //
 // functionInputs:
 //      currentPrice: uint64
 //      timestamp: uint64
 //      oracleSig: datasig
-//      issuerSig: sig
+//      treasurySig: sig
 
 // save $currentPrice
 OP_DUP
@@ -71,6 +71,6 @@ OP_EQUALVERIFY
 OP_INSPECTOUTPUTNONCE
 <0>
 OP_EQUALVERIFY
-// Require Treasury authorization
-<$issuerPk>
+// Require authorization by Treasury
+<$treasuryPk>
 OP_CHECKSIG
