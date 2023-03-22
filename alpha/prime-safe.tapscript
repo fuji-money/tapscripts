@@ -1,5 +1,0 @@
-// Name: Fuji Prime Safe
-
-// 1. Claim: Treasury can Unlock all collateral After expiration when Burning Fuji
-// 2. Private Redemption: Only Owner can Unlock all collateral with Key when Burning Fuji
-// 3. Liquidation: Treasury can Unlock all collateral with Attestation Price below the liquidation target price when Burning Fuji
