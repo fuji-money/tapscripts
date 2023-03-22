@@ -71,6 +71,6 @@ OP_EQUALVERIFY
 OP_INSPECTOUTPUTNONCE
 <0>
 OP_EQUALVERIFY
-// Require Issuer authorization
+// Require Treasury authorization
 <$issuerPk>
 OP_CHECKSIG
