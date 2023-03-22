@@ -2,7 +2,7 @@
 
 ## Alpha v0
 
-- [Safe Prime](alpha/prime-safe.tapscript)
+- [Safe Prime](alpha/README.md)
 
 
 ## Beta v1
