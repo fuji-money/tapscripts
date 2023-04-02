@@ -1,4 +1,0 @@
-// Name: Fuji Mint
-
-// 1. Borrow: Anyone can unlock reissuance token if it goes back to same output and new issuance output with amount calculated with Attestation Price
-// 2. Oracle Update: Treasury can update the list of oracle public keys whom Price Attestation is accepted to Borrow 

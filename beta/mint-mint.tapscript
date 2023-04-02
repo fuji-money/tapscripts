@@ -1,0 +1,375 @@
+// Mint/Mint:  The main function of the Mint covenant: allow spending of
+//      reissuance token to mint the Synth when all the requirements are met
+
+// constructorInputs:
+//      lbtcAsset: asset
+//      synthAsset: asset
+//      bondAmount: uint64
+//      oracleXPubsArray: bytes
+//      claimCovenantInternalXpub: xonlypubkey
+//      synthBurnDelay: uint64
+//      precisionScaler: int
+//      currencyCode: bytes
+//      oracleMessageTag: bytes
+//      claimReleaseCovenantTail: bytes
+//      claimBurnCovenantTail: bytes
+//
+// NOTE: if precisionScaler does not fit into scriptNum, then its type can be changed to
+//       uint64, but then the covenant code must be changed to remove OP_SCRIPTNUMTOLE64
+//       that converts precisionScaler from scriptNum to le64
+// NOTE: the code that prepares $claimReleaseCovenantTail must ensure that
+//       its length is less than 0xFD but greater or equal to 0x80, and will fit into
+//       1-byte varint, but will not fit into 1-byte scriptnum. Zero byte will be added
+//       to the value so it will remain a positive scriptnum. The code below depends on this
+
+// functionInputs:
+//      oracleXPubIndex: int
+//      timestamp: uint64
+//      price: uint64
+//      oracleSig: datasig
+//      minterXPub: xonlypubkey
+//      swapFlag: bool
+//      parityByte: byte
+//
+// NOTE: swapFlag is true if there's a need to swap two hashes to form correct merkle tree
+// NOTE: parityByte is expected to be either 0x02 or 0x03, but this is not checked in the
+//       covenant explicitly - just if the parityByte is incorrect, OP_TWEAKVERIFY will fail
+
+// Check static conditions of inputs
+
+// Note that we don't check input 0 at all, because if input 1 is
+// L-BTC, then input 0 can only be the token locked in the covenant
+
+// * Transaction contains exactly two inputs
+OP_INSPECTNUMINPUTS
+<2>
+OP_NUMEQUALVERIFY
+
+// * Input 1 is unblined, and contains L-BTC
+
+<1>
+OP_INSPECTINPUTASSET
+
+<1>  // check that asset is explicit
+OP_EQUALVERIFY
+
+// save asset for next checks
+OP_DUP
+OP_DUP
+OP_DUP
+
+<$lbtcAsset>   //check that asset is equal to lbtc_asset
+OP_EQUALVERIFY
+
+// Check static conditions of outputs
+
+// * Output 0 script the same as the output script of the input 0
+
+<0>
+OP_INSPECTINPUTSCRIPTPUBKEY
+<0>
+OP_INSPECTOUTPUTSCRIPTPUBKEY
+OP_ROT  // ver spk ver spk -> ver ver spk spk
+OP_EQUALVERIFY  // compare witness versions
+OP_EQUALVERIFY  // compare scriptpubkeys
+
+// * Output 1 is unblinded Synth
+
+// Script will be checked later, when we have constructed the Claim covenant
+
+// The amount is not checked, it will be used to calculate the collateral
+// amount for Claim/Release, and also will be passed as-is to Claim/Burn
+
+<1>
+OP_INSPECTOUTPUTASSET
+<1>  // ensure that asset is explicit
+OP_EQUALVERIFY
+<$synthAsset>
+OP_EQUALVERIFY
+
+// * Output 2 is unblinded L-BTC with the amount required for the bond
+
+//  Script will be checked later, when we have constructed the claim covenant
+
+<2>
+OP_INSPECTOUTPUTASSET
+<1>  // ensure that asset is explicit
+OP_EQUALVERIFY
+// lbtc_asset is on the stack (saved earlier)
+OP_EQUALVERIFY
+
+<2>
+OP_INSPECTOUTPUTVALUE
+<1>  // ensure that value is explicit
+OP_EQUALVERIFY
+<$bondAmount>
+OP_EQUALVERIFY
+
+// * Output 3 is unblinded L-BTC (eigher network fee, or change)
+<3>
+OP_INSPECTOUTPUTASSET
+<1>  // ensure that asset is explicit
+OP_EQUALVERIFY
+// $lbtcAsset is on the stack (saved earlier)
+OP_EQUALVERIFY
+
+// * Check that "Transaction contains four or five outputs"
+//
+// If there's 5 outputs, check that last output is L-BTC
+// Note that we don't check for `>= 4 outputs`, because previous
+// INSPECTOUTPUTASSET will fail if there's no output at idx 3
+
+OP_INSPECTNUMOUTPUTS
+OP_DUP
+<5>
+OP_LESSTHANOREQUAL
+OP_VERIFY
+<5>
+OP_NUMEQUAL
+
+OP_IF
+
+<4>
+OP_INSPECTOUTPUTASSET
+<1>  // ensure that asset is explicit
+OP_EQUALVERIFY
+// $lbtcAsset is on the stack (saved earlier)
+OP_EQUALVERIFY
+
+OP_ELSE
+
+OP_DROP  // drop unused $lbtcAsset
+
+OP_ENDIF
+
+// stack at this point:
+// top -> oracleXPubIndex -- o_xpub_idx
+//        timestamp       -- ts
+//        price           -- price
+//        oracleSig       -- osig
+//        minterXPub      -- minter_xpub
+//        swapFlag        -- swap?
+//        parityByte      -- parity
+
+// In the comments below, the top of the stack is on the left
+<5>
+OP_LSHIFT  // o_xpub_idx*32 ts price osig ...
+<$oracleXPubsArray>
+OP_SWAP    // o_xpub_idx*32 opubs_array ts price osig ...
+<32>
+OP_SUBSTR  // o_xpub ts price osig ...
+OP_ROT
+OP_ROT
+           // ts price o_xpub osig ...
+OP_2DUP    // ts price ts price o_xpub osig ...
+OP_TOALTSTACK
+OP_TOALTSTACK
+OP_SWAP   // price ts o_xpub osig ... | price ts
+OP_CAT    // ts+price o_xpub osig ... | price ts
+<$currencyCode>
+OP_CAT    // oracle_data o_xpub osig ... | price ts
+<$oracleMessageTag>
+OP_SHA256
+OP_DUP
+OP_CAT    // tag oracle_data o_xpub osig ... | price ts
+OP_SWAP
+OP_CAT    // tag+oracle_data o_xpub osig ... | price ts
+OP_SHA256 // SHA2(tag+oracle_data) o_xpub osig ... | price ts
+OP_SWAP   // o_xpub SHA2(tag+oracle_data) osig ... | price ts
+OP_CHECKSIGFROMSTACKVERIFY
+          // minter_xpub ... | price ts
+
+<1>
+OP_INSPECTOUTPUTVALUE
+<1>       // ensure that value is explicit
+OP_EQUALVERIFY
+          // o1_amount minter_xpub ... | price ts
+OP_DUP    // o1_amount o1_amount minter_xpub ... | price ts
+
+// hard-coded 150% collateralization ratio:
+//   synth_amount_satoshi + synth_amount_satoshi//2
+OP_DUP
+<2>
+OP_SCRIPTNUMTOLE64
+OP_DIV64
+OP_VERIFY
+OP_SWAP
+OP_DROP   // o1_amount o1_amount/2 o1_amount minter_xpub ... | price ts
+OP_ADD64
+OP_VERIFY // synth_coll_amount o1_amount minter_xpub ... | price ts
+
+<$precisionScaler>
+OP_SCRIPTNUMTOLE64
+OP_MUL64
+OP_VERIFY
+          // synth_coll_amount_scaled o1_amount minter_xpub ... | price ts
+OP_FROMALTSTACK
+          // price synth_coll_amount_scaled o1_amount minter_xpub ... | ts
+OP_ROT    // o1_amount price synth_coll_amount_scaled minter_xpub ... | ts
+OP_TOALTSTACK
+          // price synth_coll_amount_scaled minter_xpub ... | o1_amount ts
+OP_DIV64  // ok quot64 rem64 minter_xpub ... | o1_amount ts
+OP_VERIFY // quot64 rem64 minter_xpub ... | o1_amount ts
+OP_SWAP   // rem64 quot64 minter_xpub ... | o1_amount ts
+// Drop the remainder
+// -- Quotient (quot64) is the collateral amount
+OP_DROP   // lbtc_coll_amount minter_xpub ... | o1_amount ts
+OP_SIZE
+OP_SWAP
+OP_CAT    // DATA(lbtc_coll_amount) minter_xpub ... | o1_amount ts
+OP_SWAP   // minter_xpub DATA(lbtc_coll_amount) ... | o1_amount ts
+OP_SIZE   // size minter_xpub DATA(lbtc_coll_amount) ... | o1_amount ts
+OP_DUP
+<32> // check correct xpubkey size
+OP_NUMEQUALVERIFY
+          // size minter_xpub DATA(lbtc_coll_amount) ... | o1_amount ts
+OP_SWAP
+OP_CAT    // DATA(minter_xpub) DATA(lbtc_coll_amount) ... | o1_amount ts
+OP_SWAP
+OP_CAT    // DATA(minter_xpub)+DATA(lbtc_coll_amount) ... | o1_amount ts
+
+// NOTE: there's a possibility for optimisation - we could have the release
+// covenant tail as two chunks, and insert synth_asset in between. We
+// can get synth_asset from output 1 easily. But this will obviously
+// increase the complexity of the script, so for now the release # covenant tail
+// comes as a single data chunk
+
+// sr_tail for "synth release covenant tail"
+// sr_covenant for "synth release covenant"
+<$claimReleaseCovenantTail> 
+          // sr_tail DATA(minter_xpub)+DATA(lbtc_coll_amount) ... | o1_amount ts
+OP_CAT    // sr_covenant ... | o1_amount ts
+OP_SIZE   // size sr_covenant ... | o1_amount ts
+
+// NOTE: the code that prepares $claimReleaseCovenantTail must ensure that
+// its length is less than 0xFD but greater or equal to 0x80, and will fit into
+// 1-byte varint, but will not fit into 1-byte scriptnum. Zero byte will be added
+// to the value so it will remain a positive scriptnum.
+// We need 1-byte value, so we should drop that zero byte
+
+<0>
+<1>
+OP_SUBSTR
+OP_SWAP
+OP_CAT    // DATA(sr_covenant) ... | o1_amount ts
+<0xC4>    // leaf_version DATA(sr_covenant) ... | o1_amount ts
+OP_SWAP
+OP_CAT    // lfver+DATA(sr_covenant) ... | o1_amount ts
+
+// We checked earlier that asset of output 1 is Synth, so we can get it with
+// INSPECTOUTPUTASSET, drop the prefix, and then prepend the size
+// to turn it into data chunk
+
+<1>
+OP_INSPECTOUTPUTASSET
+OP_DROP
+OP_SIZE
+OP_SWAP
+OP_CAT    // DATA(synth_asset) lfver+DATA(sr_covenant) ... | o1_amount ts
+OP_FROMALTSTACK
+          // o1_amount DATA(synth_asset) lfver+DATA(sr_covenant) ... | ts
+OP_SIZE
+OP_SWAP
+OP_CAT    // DATA(o1_amount) DATA(synth_asset) lfver+DATA(sr_covenant) ... | ts
+OP_FROMALTSTACK
+          // ts DATA(o1_amount) DATA(synth_asset) lfver+DATA(sr_covenant) ...
+<$synthBurnDelay>
+OP_ADD64
+OP_VERIFY
+OP_SIZE
+OP_SWAP
+OP_CAT    // DATA(burn_ts) DATA(o1_amount) DATA(synth_asset) lfver+DATA(sr_covenant) ...
+OP_CAT
+OP_CAT    // DATA(burn_cov_args) lfver+DATA(sr_covenant) ...
+// sb_tail for "synth burn covenant tail"
+// sb_covenant for "synth burn covenant"
+<$claimBurnCovenantTail>
+          // sb_tail DATA(burn_cov_args) lfver+DATA(sr_covenant) ...
+OP_CAT    // sb_covenant lfver+DATA(sr_covenant) ...
+
+// NOTE: the code that prepares $claimBurnCovenantTail must ensure that
+// is length is less than 0x80, that will fit into 1-byte scriptnum, so
+// using OP_SIZE is OK here
+OP_SIZE
+OP_SWAP
+OP_CAT    // DATA(sb_covenant) lfver+DATA(sr_covenant) ...
+<0xC4>    // leaf_version DATA(sb_covenant) lfver+DATA(sr_covenant) ...
+OP_SWAP
+OP_CAT    // lfver+DATA(sb_covenant) lfver+DATA(sr_covenant) ...
+<'TapLeaf/elements'>
+OP_SHA256
+OP_DUP
+OP_CAT
+OP_DUP
+OP_TOALTSTACK
+          // tlh_x2 lver+DATA(sb_covenant) lfver+DATA(sr_covenant) ... | tlh_x2
+OP_SWAP
+OP_CAT
+OP_SHA256 // leafhash(sb_covenant) lfver+DATA(sr_covenant) ... | tlh_x2
+OP_SWAP   // lfver+DATA(sr_covenant) leafhash(sb_covenant) ... | tlh_x2
+OP_FROMALTSTACK
+          // tlh_x2 lfver+DATA(sr_covenant) leafhash(sb_covenant) ...
+OP_SWAP
+OP_CAT
+OP_SHA256 // leafhash(sr_covenant) leafhash(sb_covenant) swap? parity
+OP_ROT    // swap? leafhash(sr_covenant) leafhash(sb_covenant) parity
+
+OP_IF
+OP_SWAP
+OP_ENDIF
+
+OP_CAT    // leafhash+leafhash parity
+<'TapBranch/elements'>
+OP_SHA256
+OP_DUP
+OP_CAT
+OP_SWAP
+OP_CAT
+OP_SHA256 // claim_merkle_root parity
+
+// Make sure that output 1 and 2 are sent to the same script
+// these should be taproot outputs, which are xpubs, with
+// witness version 1
+<1>
+OP_INSPECTOUTPUTSCRIPTPUBKEY
+<1>  // check witver == 1
+OP_NUMEQUALVERIFY
+OP_DUP    // xpub1 xpub1 claim_merkle_root parity
+<2>
+OP_INSPECTOUTPUTSCRIPTPUBKEY
+<1>  // check witver == 1
+OP_NUMEQUALVERIFY
+          // xpub2 xpub1 xpub1 claim_merkle_root parity
+OP_EQUALVERIFY
+
+          // xpub1 claim_merkle_root parity
+OP_ROT    // parity xpub1 claim_merkle_root
+OP_SWAP   // xpub1 parity claim_merkle_root
+// we add parity byte to xpub, to get a normal pubkey
+OP_CAT    // pub1 claim_merkle_root
+OP_SWAP   // claim_merkle_root pub1
+<$claimCovenantInternalXpub>
+          // int_xpub claim_mr pub1  # noqa
+OP_TUCK   // int_xpub claim_mr int_xpub pub1
+OP_SWAP
+OP_CAT    // int_xpub+claim_mr int_xpub pub1  # noqa
+<'TapTweak/elements'>
+OP_SHA256
+OP_DUP
+OP_CAT
+OP_SWAP
+OP_CAT
+OP_SHA256 // tweak int_xpub pub1  # noqa
+OP_SWAP   // int_xpub tweak pub1
+OP_TWEAKVERIFY
+
+// we checked that constructed script corresponds to the pubkey
+// that corresponds to output 1 script.
+// We also checked before that output 1 script is equal to
+// output 2 script.
+// We therefore ensured that output 1 and output 2 will be spendable
+// only by satisfying the constructed script.
+
+// Because TWEAKVERIFY does not put anything to the stack,
+// we need to put TRUE on the stack explicitly
+OP_TRUE

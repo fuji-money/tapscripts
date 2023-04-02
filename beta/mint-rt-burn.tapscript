@@ -1,0 +1,63 @@
+// RTBurn: Treasury can burn reissuance token at any time
+
+// constructorInputs:
+//      lbtcAsset: asset
+//      rtAsset: asset
+//      treasuryPk: xonlypubkey
+
+// functionInputs:
+//      treasurySig: sig
+
+// Check that output 0 is a burn output
+<0>
+OP_INSPECTOUTPUTSCRIPTPUBKEY
+// OP_RETURN is not a witness scriptPubKey, so its version will be -1
+<-1>
+OP_EQUALVERIFY
+// 0x6a is OP_RETURN
+<0x6a>
+OP_SHA256
+
+OP_EQUALVERIFY
+
+// Output 1 is unblinded L-BTC (eigher network fee, or change)
+
+// get output 1 asset
+<1>
+OP_INSPECTOUTPUTASSET
+// check that the asset is explicit
+<1>
+OP_EQUALVERIFY
+// check that the asset is equal to $lbtcAsset
+<$lbtcAsset>
+OP_DUP  // save $lbtcAsset for later use
+OP_EQUALVERIFY
+
+// Check that "Transaction contains two or three outputs"
+//
+// If there's 3 outputs, check that last output is L-BTC
+// Note that we don't check for `>= 2 outputs`, because previous
+// `inspect_output_code` chunk will fail if there's no output at idx 1
+OP_INSPECTNUMOUTPUTS
+OP_DUP
+<3>
+OP_LESSTHANOREQUAL
+OP_VERIFY
+<3>
+OP_NUMEQUAL
+OP_IF
+// get output 2 asset
+<2>
+OP_INSPECTOUTPUTASSET
+// check that the asset is explicit
+<1>
+OP_EQUALVERIFY
+// check that the asset is equal to $lbtcAsset (saved earlier)
+OP_EQUALVERIFY
+OP_ELSE
+// drop the saved $lbtcAsset
+OP_DROP 
+OP_ENDIF
+
+<$treasuryPk>
+OP_CHECKSIG
