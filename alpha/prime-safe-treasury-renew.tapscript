@@ -1,0 +1,52 @@
+// Renew by treasury: Treasury can unilaterally renew the expiration time
+// for the locked collateral by sending it to the same covenant
+//
+// The output 0 must have the same scriptPubKey, asset, and value as the
+// input that is currently spent. Asset and value must be explicit in both
+// Input and output
+
+// constructorInputs:
+//      treasuryPk: xonlypubkey
+
+// Check that asset of the current input is the same as for output 0
+
+// Get index of the current input
+OP_PUSHCURRENTINPUTINDEX
+OP_DUP // save the index for later
+OP_DUP // save the index again for later
+OP_INSPECTINPUTASSET
+<1>
+OP_EQUALVERIFY // check that asset is explicit
+<0> // output 0
+OP_INSPECTOUTPUTASSET
+<1>
+OP_EQUALVERIFY // check that asset is explicit
+OP_EQUALVERIFY // check that input asset is equal to asset of output 0
+
+// Check that value of the current input is the same as for output 0
+
+// Now the saved current input index is on the stack
+OP_INSPECTINPUTVALUE
+<1>
+OP_EQUALVERIFY // check that value is explicit
+<0> // output 0
+OP_INSPECTOUTPUTVALUE
+<1>
+OP_EQUALVERIFY // check that value is explicit
+OP_EQUALVERIFY // check that input value is equal to value of output 0
+
+// Check that scriptpubkey of the current input is the same as for output 0
+
+// Now the saved current input index is on the stack
+OP_INSPECTINPUTSCRIPTPUBKEY
+<0> // output 0
+OP_INSPECTOUTPUTSCRIPTPUBKEY
+// now the stack is out_wv out_spk in_wv in_spk
+OP_ROT
+// now the stack is in_wv out_wv out_spk in_spk
+OP_EQUALVERIFY // check that versions match
+OP_EQUALVERIFY // check that scriptpubkeys match
+
+// Require authorization by Treasury
+<$treasuryPk>
+OP_CHECKSIG
