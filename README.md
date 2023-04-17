@@ -6,12 +6,14 @@
   - [Claim](alpha/prime-safe-claim.tapscript): Treasury can Unlock all collateral After expiration when Burning Fuji
   - [Private Redemption](alpha/prime-safe-redeem.tapscript): Only Owner can Unlock all collateral with Key when Burning Fuji
   - [Liquidation](alpha/prime-safe-liquidation.tapscript): Treasury can Unlock all collateral with Attestation Price below the liquidation target price when Burning Fuji
+  - [Treasury Renew](alpha/prime-safe-treasury-renew.tapscript): Treasury can unilaterally renew the expiration time for the locked collateral by sending it to the same covenant
 
 ## Beta v1
+
 - [Safe Unlimited](beta/unlimited-safe.tapscript)
 - [Safe Prime](beta/prime-safe.tapscript)
 - [Lock](beta/lock.tapscript)
-- [Mint](beta/mint.tapscript) 
+- [Mint](beta/mint.tapscript)
 - [Treasury](beta/treasury.tapscript)
 - Liquidator Pool
   - [Deposit](beta/liquidator/deposit.tapscript)
