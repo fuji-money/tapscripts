@@ -6,6 +6,9 @@
 //      borrowAmount: value
 //      borrowerPk: xonlypubkey
 
+// functionInputs:
+//      borrowerSig: sig
+
 // take out 0 asset
 <0>
 OP_INSPECTOUTPUTASSET

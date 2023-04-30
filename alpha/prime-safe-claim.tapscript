@@ -6,6 +6,9 @@
 //      treasuryPk: xonlypubkey
 //      expirationTimeout: number
 
+// functionInputs:
+//      treasurySig: sig
+
 // Check that $expirationTimeout has passed since the the start of the contract
 // Note that OP_CHECKSEQUENCEVERIFY will check $expirationTimeout against
 // medianTimePast, not the current timestamp
