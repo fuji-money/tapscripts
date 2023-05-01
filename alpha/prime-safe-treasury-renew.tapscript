@@ -8,6 +8,9 @@
 // constructorInputs:
 //      treasuryPk: xonlypubkey
 
+// functionInputs:
+//      treasurySig: sig
+
 // Check that asset of the current input is the same as for output 0
 
 // Get index of the current input
