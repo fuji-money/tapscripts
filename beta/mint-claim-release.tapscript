@@ -1,0 +1,83 @@
+// Claim/Release: release Synth if appropriate amount of collateral is locked in Safe
+
+// constructorInputs:
+//      synthReleaseDelay: int
+//      mintingFeeAmount: int
+//      lbtcAsset: asset
+//      synthAsset: asset
+//      witVerOfSafeCovenant: bytes
+//      witProgOfSafeCovenant: bytes
+//      witVerOfTreasuryAddress: bytes
+//      witProgOfTreasuryAddress: bytes
+
+// functionInputs:
+//      minterSig: sig
+
+// This is the 'tail' of the actual script. The script itself is prepared within
+// the main `Mint` script. Opcodes to push three values: le64(collateralAmountSatoshi),
+// $minterXPub are prepared, and then prepended to the below script.
+
+// The expected stack at the start of the below script fragment is:
+//  top -> le64($collateralAmountSatoshi)
+//         $minterXPub
+//         $minterSig
+// Note that the first two of these values are prepended to the actual script,
+// while $minterSig is put into the witness
+
+// Enforce delay
+<$synthReleaseDelay>
+OP_CHECKSEQUENCEVERIFY
+OP_DROP
+
+// Ensure that asset of output 0 is equal to $lbtcAsset
+<0>  // get asset of output 0
+OP_INSPECTOUTPUTASSET
+<1>  // ensure that asset is explicit
+OP_EQUALVERIFY
+<$lbtcAsset>
+OP_EQUALVERIFY
+
+// Ensure that scriptPubKey of output 0 is for Safe covenant
+<0>
+OP_INSPECTOUTPUTSCRIPTPUBKEY
+<$witVerOfSafeCovenant>
+OP_EQUALVERIFY
+<$witProgOfSafeCovenant>
+OP_EQUALVERIFY
+
+// Ensure that output 0 value equals $collateralAmountSatoshi
+<0>
+OP_INSPECTOUTPUTVALUE
+<1>     // ensure that value is explicit
+OP_EQUALVERIFY
+// compare with $collateralAmountSatoshi that is on top of the stack
+OP_EQUALVERIFY
+
+// Ensure that asset of output 1 is equal to $synthAsset
+<1>  // get asset of output 0
+OP_INSPECTOUTPUTASSET
+<1>  // ensure that asset is explicit
+OP_EQUALVERIFY
+<$synthAsset>
+OP_EQUALVERIFY
+
+// Ensure that output 1 value equals $mintingFeeAmount
+<1>
+OP_INSPECTOUTPUTVALUE
+<1>     // ensure that value is explicit
+OP_EQUALVERIFY
+<$mintingFeeAmount>
+OP_EQUALVERIFY
+
+// Ensure that scriptPubKey of output 1 is for Treasury address
+<1>
+OP_INSPECTOUTPUTSCRIPTPUBKEY
+<$witVerOfTreasuryAddress>
+OP_EQUALVERIFY
+<$witProgOfTreasuryAddress>
+OP_EQUALVERIFY
+
+// Ensure that the spend is authorized by original minter
+// The minter xpub is prepended to the script, and it will be
+// on top of stack here
+OP_CHECKSIG

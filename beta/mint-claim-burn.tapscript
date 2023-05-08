@@ -1,0 +1,65 @@
+// Claim/Burn: anyone can burn the locked Synth if the oracle-attested price used
+//       in the `Mint` stage was out-of-date
+
+// functionInputs:
+//      treasurySig: sig
+
+// This is the 'tail' of the actual script. The script itself is prepared within
+// the main `Mint` script. Opcodes to push three values: le64($burnTimestamp),
+// $synthAmount and $synthAsset are prepared, and then prepended to the below
+// script.
+
+// The expected stack at the start of the below script fragment is:
+//  top -> le64($burnTimestamp)
+//         le64($synthAmount)
+//         $synthAsset
+//         $treasurySig
+
+OP_DUP  // save $burnTimestamp
+
+// If $burnTimestamp fits into 4-byte scriptnum, convert it from
+// le64 to scriptnum. Otherwise, take 5 first bytes of it.
+// CHECKLOCKTIMEVERIFY accepts scriptnums of length 5,
+// and they are little-endian, so just chopping 5 bytes from le64 works.
+
+<0x0000008000000000>
+OP_GREATERTHANOREQUAL64
+OP_IF
+<0>
+<5>
+OP_SUBSTR
+OP_ELSE
+OP_LE64TOSCRIPTNUM
+OP_ENDIF
+
+// stack: timestamp_as_scriptnum
+OP_CHECKLOCKTIMEVERIFY
+OP_DROP
+
+// Ensure that out 0 value is explicit
+<0>
+OP_INSPECTOUTPUTVALUE
+<1>
+OP_EQUALVERIFY
+
+// Compare out 0 to synth_amount
+OP_EQUALVERIFY
+
+// Ensure that out 0 asset is explicit
+<0>
+OP_INSPECTOUTPUTASSET
+<1>
+OP_EQUALVERIFY
+
+// Compare out 0 to synth_asset
+OP_EQUALVERIFY
+
+// Check that output 0 is a burn output (0x6a is OP_RETURN)
+<0>
+OP_INSPECTOUTPUTSCRIPTPUBKEY
+// OP_RETURN is not a witness scriptPubKey, so its version will be -1
+<-1>
+OP_EQUALVERIFY
+<0x6a>
+OP_SHA256
+OP_EQUAL
