@@ -15,7 +15,7 @@
     },
     {
       "name": "expirationTimeout",
-      "type": "number"
+      "type": "bytes"
     },
     {
       "name": "borrowerPk",
