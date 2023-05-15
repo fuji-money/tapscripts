@@ -10,7 +10,7 @@
       "type": "value"
     },
     {
-      "name": "treasuryPk",
+      "name": "treasuryPublicKey",
       "type": "xonlypubkey"
     },
     {
@@ -18,11 +18,11 @@
       "type": "bytes"
     },
     {
-      "name": "borrowerPk",
+      "name": "borrowerPublicKey",
       "type": "xonlypubkey"
     },
     {
-      "name": "oraclePk",
+      "name": "oraclePublicKey",
       "type": "xonlypubkey"
     },
     {
@@ -93,7 +93,7 @@
         "OP_0",
         "OP_EQUALVERIFY",
 
-        "$treasuryPk",
+        "$treasuryPublicKey",
         "OP_CHECKSIG"
       ]
     },
@@ -147,7 +147,7 @@
         "$assetPair",
         "OP_CAT",
         "OP_SHA256",
-        "$oraclePk",
+        "$oraclePublicKey",
         "OP_CHECKSIGFROMSTACKVERIFY",
 
         "OP_0",
@@ -177,7 +177,7 @@
         "OP_0",
         "OP_EQUALVERIFY",
 
-        "$treasuryPk",
+        "$treasuryPublicKey",
         "OP_CHECKSIG"
       ]
     },
@@ -232,7 +232,7 @@
         "OP_0",
         "OP_EQUALVERIFY",
 
-        "$borrowerPk",
+        "$borrowerPublicKey",
         "OP_CHECKSIG"
       ]
     },
@@ -275,7 +275,7 @@
         "OP_EQUALVERIFY",
         "OP_EQUALVERIFY",
 
-        "$treasuryPk",
+        "$treasuryPublicKey",
         "OP_CHECKSIG"
       ]
     }
