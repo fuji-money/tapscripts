@@ -12,8 +12,10 @@
 // Check that $expirationTimeout has passed since the the start of the contract
 // Note that OP_CHECKSEQUENCEVERIFY will check $expirationTimeout against
 // medianTimePast, not the current timestamp
-<expirationTimeout>
+<$expirationTimeout>
 OP_CHECKSEQUENCEVERIFY
+OP_DROP
+
 // take out 0 asset
 <0>
 OP_INSPECTOUTPUTASSET
