@@ -28,9 +28,9 @@ OP_INSPECTOUTPUTASSET
 // check that the asset is explicit
 <1>
 OP_EQUALVERIFY
+OP_DUP  // save asset for later use
 // check that the asset is equal to $lbtcAsset
 <$lbtcAsset>
-OP_DUP  // save $lbtcAsset for later use
 OP_EQUALVERIFY
 
 // Check that "Transaction contains two or three outputs"
