@@ -65,6 +65,7 @@
       "asm": [
         "$expirationTimeout",
         "OP_CHECKSEQUENCEVERIFY",
+        "OP_DROP",
 
         "OP_0",
         "OP_INSPECTOUTPUTASSET",
