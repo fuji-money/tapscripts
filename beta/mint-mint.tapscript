@@ -224,17 +224,17 @@ OP_SWAP   // rem64 quot64 minter_xpub ... | o1_amount ts
 OP_DROP   // =>lbtc_coll_amount minter_xpub ... | o1_amount ts
 OP_SIZE
 OP_SWAP
-OP_CAT    // =>DATA(lbtc_coll_amount) minter_xpub ... | o1_amount ts
-OP_SWAP   // minter_xpub DATA(lbtc_coll_amount) ... | o1_amount ts
-OP_SIZE   // size minter_xpub DATA(lbtc_coll_amount) ... | o1_amount ts
+OP_CAT    // =>DATA_lbtc_coll_amount minter_xpub ... | o1_amount ts
+OP_SWAP   // minter_xpub DATA_lbtc_coll_amount ... | o1_amount ts
+OP_SIZE   // size minter_xpub DATA_lbtc_coll_amount ... | o1_amount ts
 OP_DUP
 <32> // check correct xpubkey size
 OP_NUMEQUALVERIFY
-          // size minter_xpub DATA(lbtc_coll_amount) ... | o1_amount ts
+          // size minter_xpub DATA_lbtc_coll_amount ... | o1_amount ts
 OP_SWAP
-OP_CAT    // =>DATA(minter_xpub) DATA(lbtc_coll_amount) ... | o1_amount ts
+OP_CAT    // =>DATA_minter_xpub DATA_lbtc_coll_amount) ... | o1_amount ts
 OP_SWAP
-OP_CAT    // DATA(minter_xpub)+DATA(lbtc_coll_amount) ... | o1_amount ts
+OP_CAT    // DATA_minter_xpub+DATA_lbtc_coll_amount ... | o1_amount ts
 
 // NOTE: there's a possibility for optimisation - we could have the release
 // covenant tail as two chunks, and insert synth_asset in between. We
@@ -245,7 +245,7 @@ OP_CAT    // DATA(minter_xpub)+DATA(lbtc_coll_amount) ... | o1_amount ts
 // sr_tail for "synth release covenant tail"
 // sr_covenant for "synth release covenant"
 <$claimReleaseCovenantTail>
-          // sr_tail DATA(minter_xpub)+DATA(lbtc_coll_amount) ... | o1_amount ts
+          // sr_tail DATA_minter_xpub+DATA_lbtc_coll_amount ... | o1_amount ts
 OP_CAT    // =>sr_covenant ... | o1_amount ts
 OP_SIZE   // size sr_covenant ... | o1_amount ts
 
@@ -259,10 +259,10 @@ OP_SIZE   // size sr_covenant ... | o1_amount ts
 <1>
 OP_SUBSTR
 OP_SWAP
-OP_CAT    // =>DATA(sr_covenant) ... | o1_amount ts
-<0xC4>    // leaf_version DATA(sr_covenant) ... | o1_amount ts
+OP_CAT    // =>DATA_sr_covenant ... | o1_amount ts
+<0xC4>    // leaf_version DATA_sr_covenant ... | o1_amount ts
 OP_SWAP
-OP_CAT    // lfver+DATA(sr_covenant) ... | o1_amount ts
+OP_CAT    // lfver+DATA_sr_covenant ... | o1_amount ts
 
 // We checked earlier that asset of output 1 is Synth, so we can get it with
 // INSPECTOUTPUTASSET, drop the prefix, and then prepend the size
@@ -273,50 +273,50 @@ OP_INSPECTOUTPUTASSET
 OP_DROP
 OP_SIZE
 OP_SWAP
-OP_CAT    // =>DATA(synth_asset) lfver+DATA(sr_covenant) ... | o1_amount ts
+OP_CAT    // =>DATA_synth_asset lfver+DATA_sr_covenant ... | o1_amount ts
 OP_FROMALTSTACK
-          // o1_amount DATA(synth_asset) lfver+DATA(sr_covenant) ... | ts
+          // o1_amount DATA_synth_asset lfver+DATA_sr_covenant ... | ts
 OP_SIZE
 OP_SWAP
-OP_CAT    // =>DATA(o1_amount) DATA(synth_asset) lfver+DATA(sr_covenant) ... | ts
+OP_CAT    // =>DATA_o1_amount DATA_synth_asset lfver+DATA_sr_covenant ... | ts
 OP_FROMALTSTACK
-          // ts DATA(o1_amount) DATA(synth_asset) lfver+DATA(sr_covenant) ...
+          // ts DATA_o1_amount DATA_synth_asset lfver+DATA_sr_covenant ...
 <$synthBurnDelay>
 OP_ADD64
 OP_VERIFY // =>burn_ts ...
 OP_SIZE
 OP_SWAP
-OP_CAT    // =>DATA(burn_ts) DATA(o1_amount) DATA(synth_asset) lfver+DATA(sr_covenant) ...
+OP_CAT    // =>DATA_burn_ts DATA_o1_amount DATA_synth_asset lfver+DATA_sr_covenant ...
 OP_CAT
-OP_CAT    // =>DATA(burn_cov_args) lfver+DATA(sr_covenant) ...
+OP_CAT    // =>DATA_burn_cov_args lfver+DATA_sr_covenant ...
 // sb_tail for "synth burn covenant tail"
 // sb_covenant for "synth burn covenant"
 <$claimBurnCovenantTail>
-          // sb_tail DATA(burn_cov_args) lfver+DATA(sr_covenant) ...
-OP_CAT    // =>sb_covenant lfver+DATA(sr_covenant) ...
+          // sb_tail DATA_burn_cov_args lfver+DATA_sr_covenant ...
+OP_CAT    // =>sb_covenant lfver+DATA_sr_covenant ...
 
 // NOTE: the code that prepares $claimBurnCovenantTail must ensure that
 // is length is less than 0x80, that will fit into 1-byte scriptnum, so
 // using OP_SIZE is OK here
 OP_SIZE
 OP_SWAP
-OP_CAT    // =>DATA(sb_covenant) lfver+DATA(sr_covenant) ...
-<0xC4>    // leaf_version DATA(sb_covenant) lfver+DATA(sr_covenant) ...
+OP_CAT    // =>DATA_sb_covenant lfver+DATA_sr_covenant ...
+<0xC4>    // leaf_version DATA_sb_covenant lfver+DATA_sr_covenant ...
 OP_SWAP
-OP_CAT    // lfver+DATA(sb_covenant) lfver+DATA(sr_covenant) ...
+OP_CAT    // lfver+DATA_sb_covenant lfver+DATA_sr_covenant ...
 <'TapLeaf/elements'>
 OP_SHA256
 OP_DUP
 OP_CAT    // =>TL_tag ...
 OP_DUP
 OP_TOALTSTACK
-          // tlh_x2 lver+DATA(sb_covenant) lfver+DATA(sr_covenant) ... | tlh_x2
+          // tlh_x2 lver+DATA_sb_covenant lfver+DATA_sr_covenant ... | tlh_x2
 OP_SWAP
 OP_CAT
-OP_SHA256 // =>leafhash_cov_sb lfver+DATA(sr_covenant) ... | tlh_x2
-OP_SWAP   // lfver+DATA(sr_covenant) leafhash(sb_covenant) ... | tlh_x2
+OP_SHA256 // =>leafhash_cov_sb lfver+DATA_sr_covenant ... | tlh_x2
+OP_SWAP   // lfver+DATA_sr_covenant leafhash(sb_covenant) ... | tlh_x2
 OP_FROMALTSTACK
-          // tlh_x2 lfver+DATA(sr_covenant) leafhash_cov_sb ...
+          // tlh_x2 lfver+DATA_sr_covenant leafhash_cov_sb ...
 OP_SWAP
 OP_CAT
 OP_SHA256 // =>leafhash_cov_sr leafhash(sb_covenant) swap? parity
