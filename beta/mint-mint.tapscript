@@ -158,6 +158,8 @@ OP_ENDIF
 //        parityByte      -- parity
 
 // In the comments below, the top of the stack is on the left
+<0>
+OP_ADD  // make sure oracleXPubIndex is minimally encoded
 <5>
 OP_LSHIFT  // o_xpub_idx*32 ts price osig ...
 <$oracleXPubsArray>
