@@ -40,8 +40,6 @@
 // bsst-name-alias(wit6): parityByte
 //
 // NOTE: swapFlag is true if there's a need to swap two hashes to form correct merkle tree
-// NOTE: parityByte is expected to be either 0x02 or 0x03, but this is not checked in the
-//       covenant explicitly - just if the parityByte is incorrect, OP_TWEAKVERIFY will fail
 
 // Check static conditions of inputs
 
@@ -352,6 +350,11 @@ OP_EQUALVERIFY
 
           // xpub1 claim_merkle_root parity
 OP_ROT    // parity xpub1 claim_merkle_root
+OP_DUP
+<2>
+<4>
+OP_WITHIN // make sure parity byte is 2 or 3
+OP_VERIFY
 OP_SWAP   // xpub1 parity claim_merkle_root
 // we add parity byte to xpub, to get a normal pubkey
 OP_CAT    // pub1 claim_merkle_root
