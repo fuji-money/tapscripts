@@ -31,9 +31,15 @@
 //      swapFlag: bool
 //      parityByte: byte
 //
+// bsst-name-alias(wit0): oracleXPubIndex
+// bsst-name-alias(wit1): timestamp
+// bsst-name-alias(wit2): price
+// bsst-name-alias(wit3): oracleSig
+// bsst-name-alias(wit4): minterXPub
+// bsst-name-alias(wit5): swapFlag
+// bsst-name-alias(wit6): parityByte
+//
 // NOTE: swapFlag is true if there's a need to swap two hashes to form correct merkle tree
-// NOTE: parityByte is expected to be either 0x02 or 0x03, but this is not checked in the
-//       covenant explicitly - just if the parityByte is incorrect, OP_TWEAKVERIFY will fail
 
 // Check static conditions of inputs
 
@@ -152,12 +158,14 @@ OP_ENDIF
 //        parityByte      -- parity
 
 // In the comments below, the top of the stack is on the left
+<0>
+OP_ADD  // make sure oracleXPubIndex is minimally encoded
 <5>
 OP_LSHIFT  // o_xpub_idx*32 ts price osig ...
 <$oracleXPubsArray>
 OP_SWAP    // o_xpub_idx*32 opubs_array ts price osig ...
 <32>
-OP_SUBSTR  // o_xpub ts price osig ...
+OP_SUBSTR  // =>oracle_xpub ts price osig ...
 OP_ROT
 OP_ROT
            // ts price o_xpub osig ...
@@ -171,7 +179,7 @@ OP_CAT    // oracle_data o_xpub osig ... | price ts
 <$oracleMessageTag>
 OP_SHA256
 OP_DUP
-OP_CAT    // tag oracle_data o_xpub osig ... | price ts
+OP_CAT    // =>oracle_tag oracle_data o_xpub osig ... | price ts
 OP_SWAP
 OP_CAT    // tag+oracle_data o_xpub osig ... | price ts
 OP_SHA256 // SHA2(tag+oracle_data) o_xpub osig ... | price ts
@@ -196,13 +204,13 @@ OP_VERIFY
 OP_SWAP
 OP_DROP   // o1_amount o1_amount/2 o1_amount minter_xpub ... | price ts
 OP_ADD64
-OP_VERIFY // synth_coll_amount o1_amount minter_xpub ... | price ts
+OP_VERIFY // =>synth_coll_amount o1_amount minter_xpub ... | price ts
 
 <$precisionScaler>
 OP_SCRIPTNUMTOLE64
 OP_MUL64
 OP_VERIFY
-          // synth_coll_amount_scaled o1_amount minter_xpub ... | price ts
+          // =>synth_coll_amount_scaled o1_amount minter_xpub ... | price ts
 OP_FROMALTSTACK
           // price synth_coll_amount_scaled o1_amount minter_xpub ... | ts
 OP_ROT    // o1_amount price synth_coll_amount_scaled minter_xpub ... | ts
@@ -213,20 +221,20 @@ OP_VERIFY // quot64 rem64 minter_xpub ... | o1_amount ts
 OP_SWAP   // rem64 quot64 minter_xpub ... | o1_amount ts
 // Drop the remainder
 // -- Quotient (quot64) is the collateral amount
-OP_DROP   // lbtc_coll_amount minter_xpub ... | o1_amount ts
+OP_DROP   // =>lbtc_coll_amount minter_xpub ... | o1_amount ts
 OP_SIZE
 OP_SWAP
-OP_CAT    // DATA(lbtc_coll_amount) minter_xpub ... | o1_amount ts
-OP_SWAP   // minter_xpub DATA(lbtc_coll_amount) ... | o1_amount ts
-OP_SIZE   // size minter_xpub DATA(lbtc_coll_amount) ... | o1_amount ts
+OP_CAT    // =>DATA_lbtc_coll_amount minter_xpub ... | o1_amount ts
+OP_SWAP   // minter_xpub DATA_lbtc_coll_amount ... | o1_amount ts
+OP_SIZE   // size minter_xpub DATA_lbtc_coll_amount ... | o1_amount ts
 OP_DUP
 <32> // check correct xpubkey size
 OP_NUMEQUALVERIFY
-          // size minter_xpub DATA(lbtc_coll_amount) ... | o1_amount ts
+          // size minter_xpub DATA_lbtc_coll_amount ... | o1_amount ts
 OP_SWAP
-OP_CAT    // DATA(minter_xpub) DATA(lbtc_coll_amount) ... | o1_amount ts
+OP_CAT    // =>DATA_minter_xpub DATA_lbtc_coll_amount) ... | o1_amount ts
 OP_SWAP
-OP_CAT    // DATA(minter_xpub)+DATA(lbtc_coll_amount) ... | o1_amount ts
+OP_CAT    // DATA_minter_xpub+DATA_lbtc_coll_amount ... | o1_amount ts
 
 // NOTE: there's a possibility for optimisation - we could have the release
 // covenant tail as two chunks, and insert synth_asset in between. We
@@ -236,9 +244,9 @@ OP_CAT    // DATA(minter_xpub)+DATA(lbtc_coll_amount) ... | o1_amount ts
 
 // sr_tail for "synth release covenant tail"
 // sr_covenant for "synth release covenant"
-<$claimReleaseCovenantTail> 
-          // sr_tail DATA(minter_xpub)+DATA(lbtc_coll_amount) ... | o1_amount ts
-OP_CAT    // sr_covenant ... | o1_amount ts
+<$claimReleaseCovenantTail>
+          // sr_tail DATA_minter_xpub+DATA_lbtc_coll_amount ... | o1_amount ts
+OP_CAT    // =>sr_covenant ... | o1_amount ts
 OP_SIZE   // size sr_covenant ... | o1_amount ts
 
 // NOTE: the code that prepares $claimReleaseCovenantTail must ensure that
@@ -251,10 +259,10 @@ OP_SIZE   // size sr_covenant ... | o1_amount ts
 <1>
 OP_SUBSTR
 OP_SWAP
-OP_CAT    // DATA(sr_covenant) ... | o1_amount ts
-<0xC4>    // leaf_version DATA(sr_covenant) ... | o1_amount ts
+OP_CAT    // =>DATA_sr_covenant ... | o1_amount ts
+<0xC4>    // leaf_version DATA_sr_covenant ... | o1_amount ts
 OP_SWAP
-OP_CAT    // lfver+DATA(sr_covenant) ... | o1_amount ts
+OP_CAT    // lfver+DATA_sr_covenant ... | o1_amount ts
 
 // We checked earlier that asset of output 1 is Synth, so we can get it with
 // INSPECTOUTPUTASSET, drop the prefix, and then prepend the size
@@ -265,54 +273,54 @@ OP_INSPECTOUTPUTASSET
 OP_DROP
 OP_SIZE
 OP_SWAP
-OP_CAT    // DATA(synth_asset) lfver+DATA(sr_covenant) ... | o1_amount ts
+OP_CAT    // =>DATA_synth_asset lfver+DATA_sr_covenant ... | o1_amount ts
 OP_FROMALTSTACK
-          // o1_amount DATA(synth_asset) lfver+DATA(sr_covenant) ... | ts
+          // o1_amount DATA_synth_asset lfver+DATA_sr_covenant ... | ts
 OP_SIZE
 OP_SWAP
-OP_CAT    // DATA(o1_amount) DATA(synth_asset) lfver+DATA(sr_covenant) ... | ts
+OP_CAT    // =>DATA_o1_amount DATA_synth_asset lfver+DATA_sr_covenant ... | ts
 OP_FROMALTSTACK
-          // ts DATA(o1_amount) DATA(synth_asset) lfver+DATA(sr_covenant) ...
+          // ts DATA_o1_amount DATA_synth_asset lfver+DATA_sr_covenant ...
 <$synthBurnDelay>
 OP_ADD64
-OP_VERIFY
+OP_VERIFY // =>burn_ts ...
 OP_SIZE
 OP_SWAP
-OP_CAT    // DATA(burn_ts) DATA(o1_amount) DATA(synth_asset) lfver+DATA(sr_covenant) ...
+OP_CAT    // =>DATA_burn_ts DATA_o1_amount DATA_synth_asset lfver+DATA_sr_covenant ...
 OP_CAT
-OP_CAT    // DATA(burn_cov_args) lfver+DATA(sr_covenant) ...
+OP_CAT    // =>DATA_burn_cov_args lfver+DATA_sr_covenant ...
 // sb_tail for "synth burn covenant tail"
 // sb_covenant for "synth burn covenant"
 <$claimBurnCovenantTail>
-          // sb_tail DATA(burn_cov_args) lfver+DATA(sr_covenant) ...
-OP_CAT    // sb_covenant lfver+DATA(sr_covenant) ...
+          // sb_tail DATA_burn_cov_args lfver+DATA_sr_covenant ...
+OP_CAT    // =>sb_covenant lfver+DATA_sr_covenant ...
 
 // NOTE: the code that prepares $claimBurnCovenantTail must ensure that
 // is length is less than 0x80, that will fit into 1-byte scriptnum, so
 // using OP_SIZE is OK here
 OP_SIZE
 OP_SWAP
-OP_CAT    // DATA(sb_covenant) lfver+DATA(sr_covenant) ...
-<0xC4>    // leaf_version DATA(sb_covenant) lfver+DATA(sr_covenant) ...
+OP_CAT    // =>DATA_sb_covenant lfver+DATA_sr_covenant ...
+<0xC4>    // leaf_version DATA_sb_covenant lfver+DATA_sr_covenant ...
 OP_SWAP
-OP_CAT    // lfver+DATA(sb_covenant) lfver+DATA(sr_covenant) ...
+OP_CAT    // lfver+DATA_sb_covenant lfver+DATA_sr_covenant ...
 <'TapLeaf/elements'>
 OP_SHA256
 OP_DUP
-OP_CAT
+OP_CAT    // =>TL_tag ...
 OP_DUP
 OP_TOALTSTACK
-          // tlh_x2 lver+DATA(sb_covenant) lfver+DATA(sr_covenant) ... | tlh_x2
+          // tlh_x2 lver+DATA_sb_covenant lfver+DATA_sr_covenant ... | tlh_x2
 OP_SWAP
 OP_CAT
-OP_SHA256 // leafhash(sb_covenant) lfver+DATA(sr_covenant) ... | tlh_x2
-OP_SWAP   // lfver+DATA(sr_covenant) leafhash(sb_covenant) ... | tlh_x2
+OP_SHA256 // =>leafhash_cov_sb lfver+DATA_sr_covenant ... | tlh_x2
+OP_SWAP   // lfver+DATA_sr_covenant leafhash(sb_covenant) ... | tlh_x2
 OP_FROMALTSTACK
-          // tlh_x2 lfver+DATA(sr_covenant) leafhash(sb_covenant) ...
+          // tlh_x2 lfver+DATA_sr_covenant leafhash_cov_sb ...
 OP_SWAP
 OP_CAT
-OP_SHA256 // leafhash(sr_covenant) leafhash(sb_covenant) swap? parity
-OP_ROT    // swap? leafhash(sr_covenant) leafhash(sb_covenant) parity
+OP_SHA256 // =>leafhash_cov_sr leafhash(sb_covenant) swap? parity
+OP_ROT    // swap? leafhash_cov_sr leafhash_cov_sb parity
 
 OP_IF
 OP_SWAP
@@ -322,7 +330,7 @@ OP_CAT    // leafhash+leafhash parity
 <'TapBranch/elements'>
 OP_SHA256
 OP_DUP
-OP_CAT
+OP_CAT    // =>TB_tag ...
 OP_SWAP
 OP_CAT
 OP_SHA256 // claim_merkle_root parity
@@ -344,6 +352,11 @@ OP_EQUALVERIFY
 
           // xpub1 claim_merkle_root parity
 OP_ROT    // parity xpub1 claim_merkle_root
+OP_DUP
+<2>
+<4>
+OP_WITHIN // make sure parity byte is 2 or 3
+OP_VERIFY
 OP_SWAP   // xpub1 parity claim_merkle_root
 // we add parity byte to xpub, to get a normal pubkey
 OP_CAT    // pub1 claim_merkle_root
@@ -356,7 +369,7 @@ OP_CAT    // int_xpub+claim_mr int_xpub pub1  # noqa
 <'TapTweak/elements'>
 OP_SHA256
 OP_DUP
-OP_CAT
+OP_CAT    // =>TT_tag ...
 OP_SWAP
 OP_CAT
 OP_SHA256 // tweak int_xpub pub1  # noqa

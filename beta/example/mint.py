@@ -15,15 +15,21 @@ from typing import Optional, List
 
 from multiprocessing import Process, Lock
 
-from bitcointx import select_chain_params, allow_secp256k1_experimental_modules
+import bitcointx
+import elementstx
+
+if len(sys.argv) > 3:
+    secp256k1_path = sys.argv[3]
+    bitcointx.set_custom_secp256k1_path(secp256k1_path)
+    elementstx.set_custom_secp256k1_path(secp256k1_path)
+
+from bitcointx import select_chain_params
 from bitcointx.wallet import CCoinKey
 from bitcointx.util import tagged_hasher
 
 from bitcointx.core.key import tap_tweak_pubkey
 from bitcointx.core.serialize import BytesSerializer
 from elementstx.core import CoreElementsParams
-
-allow_secp256k1_experimental_modules()  # noqa: call before secp256k1 is loaded
 
 from bitcointx.rpc import RPCCaller, VerifyRejectedError, JSONRPCError
 from bitcointx.core import coins_to_satoshi, satoshi_to_coins, x, lx, b2lx, Uint256
@@ -34,7 +40,7 @@ from bitcointx.core.script import (
     OP_NUMEQUAL, OP_IF, OP_ELSE, OP_ENDIF, OP_LSHIFT, OP_SWAP, OP_SUBSTR,
     OP_ROT, OP_2DUP, OP_TOALTSTACK, OP_CAT, OP_SHA256, OP_FROMALTSTACK,
     OP_SIZE, OP_CHECKSEQUENCEVERIFY, OP_CHECKSIG, OP_CHECKLOCKTIMEVERIFY,
-    OP_DROP, OP_TUCK, OP_TRUE, OP_RETURN, OP_EQUAL,
+    OP_DROP, OP_TUCK, OP_TRUE, OP_RETURN, OP_EQUAL, OP_WITHIN, OP_ADD,
     CScriptWitness
 )
 
@@ -219,7 +225,7 @@ def find_utxo(rpc, asset, amount):
             except JSONRPCError:
                 pass
 
-    assert 0, f"cannot find big enough unconfidential L-BTC utxo (requested amount {amount}+1000)"
+    assert 0, f"cannot find big enough *_unconfidential_* L-BTC utxo (requested amount {amount}+1000)"
 
 
 def participant_says(name, msg):
@@ -897,6 +903,7 @@ def construct_covenant_for_reissuance(
     # stack: o_xpub_idx ts price osig minter_xpub swap? parity
     #  NOTE: parity is 0x02 or 0x03
     covenant_code += [  # noqa
+        0, OP_ADD,  # make sure o_xpub_idx is minimally-encoded
         5, OP_LSHIFT,   # o_xpub_idx*32 ts price osig ...
         DATA(b''.join(oracle_xpubkeys)),
         OP_SWAP,        # o_xpub_idx*32 opubs_array ts price osig ...
@@ -1042,6 +1049,7 @@ def construct_covenant_for_reissuance(
 
                         # xpub1 claim_merkle_root parity
         OP_ROT,         # parity xpub1 claim_merkle_root
+        OP_DUP, 2, 4, OP_WITHIN, OP_VERIFY,  # make sure partity byte is 2 or 3
         OP_SWAP,        # xpub1 parity claim_merkle_root
         OP_CAT,         # pub1 claim_merkle_root
         OP_SWAP,        # claim_merkle_root pub1
